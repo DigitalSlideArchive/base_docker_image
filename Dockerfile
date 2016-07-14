@@ -88,6 +88,7 @@ RUN cd / && \
         -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF ../ITK && \
     ninja  && \
     ninja install && \
+    cd / && \
     rm -rf ITK ITKbuild 
 
 
