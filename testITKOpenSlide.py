@@ -40,7 +40,7 @@ class TestITKOpenSlide(unittest.TestCase):
 
     def test_svs(self):
         cwd=os.getcwd()
-        wget.download('http://openslide.cs.cmu.edu/download/openslide-testdata/Aperio/JP2K-33003-1.svs',out=cwd+'/test')
+        wget.download('https://data.kitware.com/api/v1/file/57a0ed248d777f1268279da9/download',out=cwd+'/test')
         self. OpenSlideITKRead('dsarchive/base_docker_image','JP2K-33003-1.svs','out2.jpg')
 
 
