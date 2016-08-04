@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#==========================================================================
+# ==========================================================================
 #
 #   Copyright Insight Software Consortium
 #
@@ -16,11 +16,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-#==========================================================================*/
+# ==========================================================================*/
 
 # This examples shows how to do streamed processing of an image read with the
 # IOOpenSlide module to reduce memory consumption.
-#From https://github.com/InsightSoftwareConsortium/ITKIOOpenSlide/blob/master/examples/StreamProcessing.py
+# From https://github.com/InsightSoftwareConsortium/ITKIOOpenSlide/blob
+# /master/examples/StreamProcessing.py
 import sys
 
 import itk
@@ -41,11 +42,12 @@ try:
     imageio = itk.OpenSlideImageIO.New()
     reader.SetImageIO(imageio)
 
-    median = itk.MedianImageFilter[ImageType,ImageType].New(Input=reader.GetOutput())
+    median = itk.MedianImageFilter[ImageType, ImageType].New(
+        Input=reader.GetOutput())
     median.SetRadius(radiusValue)
 
     writer = itk.ImageFileWriter[ImageType].New(Input=median.GetOutput(),
-        FileName=outputImage)
+                                                FileName=outputImage)
     # Process the image in three chunks
     writer.SetNumberOfStreamDivisions(3)
     writer.Update()
@@ -53,4 +55,3 @@ try:
 except Exception as err:
     print(err)
     sys.exit(1)
-
