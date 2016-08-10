@@ -1,0 +1,25 @@
+language: python
+python:
+    - "2.7"
+
+addons:
+    apt:
+    packages:
+        python-pip
+
+sudo: required
+
+services:
+  - docker
+
+before_install:
+- docker pull dsarchive/base_docker_image
+- pip install -r requirements.txt
+- python -m pip install flake8
+- git clone https://github.com/DigitalSlideArchive/base_docker_image.git 
+- cd base_docker_image
+- git checkout install_lib_from_source
+
+script:
+    - python -m flake8 --config=flake8.cfg *
+    - python -m unittest -v testITKOpenSlide

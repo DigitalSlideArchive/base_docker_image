@@ -18,14 +18,68 @@ RUN apt-get update && \
     unzip \
     libhdf5-dev \
     libjpeg-dev \
-    libopenslide-dev \
+
     libpng12-dev \
     libpython3-dev \
     libtiff5-dev \
     cmake \
-    openslide-tools && \
+    # needed to build openslide, libbtif and openjpg
+    # openjpeg
+    libglib2.0-dev \
+    libjpeg-dev \
+    libxml2-dev \
+    libpng12-dev \
+  # openslide
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    libcairo2-dev \
+    libgdk-pixbuf2.0-dev \
+    libxml2-dev \
+    libsqlite3-dev &&\
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+#manually install openjpg, libtiff and openslide
+RUN mkdir build_lib && \
+    cd build_lib && \ 
+    #build openjpg
+    wget -O openjpeg-1.5.2.tar.gz https://github.com/uclouvain/openjpeg/archive/version.1.5.2.tar.gz && \
+    tar -zxf openjpeg-1.5.2.tar.gz && \
+    cd openjpeg-version.1.5.2 && \
+    cmake . && \
+    make && \
+    sudo make install && \
+    sudo ldconfig && \
+    cd .. && \
+
+    # Build libtiff so it will use our openjpeg
+    wget http://download.osgeo.org/libtiff/tiff-4.0.3.tar.gz && \
+    tar -zxf tiff-4.0.3.tar.gz && \
+    cd tiff-4.0.3 && \
+    ./configure && \
+    make && \
+    sudo make install && \
+    sudo ldconfig && \
+    cd .. && \
+    
+
+    # Build OpenSlide ourselves so that it will use our libtiff
+
+    wget -O openslide-3.4.1.tar.gz https://github.com/openslide/openslide/archive/v3.4.1.tar.gz && \
+    tar -zxf openslide-3.4.1.tar.gz && \
+    cd openslide-3.4.1 && \
+    autoreconf -i && \
+    ./configure && \
+    make && \
+    sudo make install && \
+    sudo ldconfig && \
+    cd / && \
+    rm -rf build_lib 
+
+
+
 
 WORKDIR /
 
