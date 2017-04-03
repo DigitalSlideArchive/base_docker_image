@@ -2,9 +2,9 @@ FROM ubuntu:16.04
 MAINTAINER MAINTAINER David Manthey <david.manthey@kitware.com>
 
 
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade && \
+    apt-get install -y --no-install-recommends \
     git \
     wget \
     python-qt4 \
@@ -48,7 +48,10 @@ RUN apt-get install -y --no-install-recommends \
     libgdk-pixbuf2.0-dev \
     libsqlite3-dev \
 
-    libjpeg-turbo8-dev && \
+    libjpeg-turbo8-dev \
+
+    # useful later
+    libmemcached-dev && \
 
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
