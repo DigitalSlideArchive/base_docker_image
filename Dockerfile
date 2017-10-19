@@ -1,85 +1,100 @@
-FROM ubuntu:14.04
-MAINTAINER Bilal Salam <bilal.salam@kitware.com>
+FROM ubuntu:16.04
+MAINTAINER MAINTAINER David Manthey <david.manthey@kitware.com>
 
 
 RUN apt-get update && \
-    apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade && \
+    apt-get install -y --no-install-recommends \
     git \
     wget \
     python-qt4 \
-    openslide-tools python-openslide \
-    build-essential \
-    swig \
-    make \
-    zlib1g-dev \
+    # openslide-tools \
+    # python-openslide \
+    # swig \
+    # make \
     curl \
+    ca-certificates \
     libcurl4-openssl-dev \
     libexpat1-dev \
     unzip \
     libhdf5-dev \
-    libjpeg-dev \
-
-    libpng12-dev \
     libpython3-dev \
-    libtiff5-dev \
+    python2.7-dev \
+    python-software-properties \
+    libssl-dev \
+
+    # needed to build openslide, libtif and openjpg
+    build-essential \
     cmake \
-    # needed to build openslide, libbtif and openjpg
-    # openjpeg
+    libtiff5-dev \
+    libjpeg8-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libwebp-dev \
+    tcl8.6-dev \
+    tk8.6-dev \
+    python-tk \
+    libvips-tools \
     libglib2.0-dev \
     libjpeg-dev \
     libxml2-dev \
     libpng12-dev \
-  # openslide
     autoconf \
     automake \
     libtool \
     pkg-config \
     libcairo2-dev \
     libgdk-pixbuf2.0-dev \
-    libxml2-dev \
-    libsqlite3-dev &&\
+    libsqlite3-dev \
+
+    libjpeg-turbo8-dev \
+
+    # useful later
+    libmemcached-dev && \
+
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-#manually install openjpg, libtiff and openslide
+WORKDIR /
+
+# build our own openjpg, libtiff and openslide.  Do this as one Docker command
+# so that the intermediate images are small
 RUN mkdir build_lib && \
-    cd build_lib && \ 
+
     #build openjpg
-    wget -O openjpeg-1.5.2.tar.gz https://github.com/uclouvain/openjpeg/archive/version.1.5.2.tar.gz && \
-    tar -zxf openjpeg-1.5.2.tar.gz && \
-    cd openjpeg-version.1.5.2 && \
+    cd /build_lib && \
+    wget -O openjpeg-2.1.2.tar.gz https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz && \
+    tar -zxf openjpeg-2.1.2.tar.gz && \
+    cd openjpeg-2.1.2 && \
     cmake . && \
     make && \
-    sudo make install && \
-    sudo ldconfig && \
-    cd .. && \
+    make install && \
+    ldconfig && \
 
     # Build libtiff so it will use our openjpeg
-    wget http://download.osgeo.org/libtiff/tiff-4.0.3.tar.gz && \
-    tar -zxf tiff-4.0.3.tar.gz && \
-    cd tiff-4.0.3 && \
+    cd /build_lib && \
+    wget http://download.osgeo.org/libtiff/tiff-4.0.6.tar.gz && \
+    tar -zxf tiff-4.0.6.tar.gz && \
+    cd tiff-4.0.6 && \
     ./configure && \
     make && \
-    sudo make install && \
-    sudo ldconfig && \
-    cd .. && \
-    
+    make install && \
+    ldconfig && \
 
     # Build OpenSlide ourselves so that it will use our libtiff
-
+    cd /build_lib && \
     wget -O openslide-3.4.1.tar.gz https://github.com/openslide/openslide/archive/v3.4.1.tar.gz && \
     tar -zxf openslide-3.4.1.tar.gz && \
     cd openslide-3.4.1 && \
     autoreconf -i && \
     ./configure && \
     make && \
-    sudo make install && \
-    sudo ldconfig && \
+    make install && \
+    ldconfig && \
+
     cd / && \
-    rm -rf build_lib 
-
-
-
+    rm -rf build_lib
 
 WORKDIR /
 
@@ -95,22 +110,19 @@ RUN mkdir -p $build_path && \
 ENV PATH=$build_path/miniconda/bin:${PATH}
 
 
-
-
 #ITK dependencies
 
-RUN cd / && \ 
+RUN cd / && \
     mkdir ninja && \
     cd ninja && \
     wget https://github.com/ninja-build/ninja/releases/download/v1.7.1/ninja-linux.zip && \
     unzip ninja-linux.zip && \
-    ln -s $(pwd)/ninja /usr/bin/ninja  
-
+    ln -s $(pwd)/ninja /usr/bin/ninja
 
 
 #need to get the latest tag of master branch in ITK
 # v4.10.0 = 95291c32dc0162d688b242deea2b059dac58754a
-RUN cd / && \ 
+RUN cd / && \
     git clone https://github.com/InsightSoftwareConsortium/ITK.git && \
     cd ITK && \
     git checkout $(git describe --abbrev=0 --tags) && \
@@ -140,12 +152,8 @@ RUN cd / && \
         -DPYTHON_LIBRARY:FILEPATH=/build/miniconda/lib/libpython2.7.so \
         -DPYTHON_EXECUTABLE:FILEPATH=/build/miniconda/bin/python \
         -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF ../ITK && \
-    ninja  && \
+    ninja && \
     ninja install && \
     cd / && \
-    rm -rf ITK ITKbuild 
-
-
-
-
+    rm -rf ITK ITKbuild
 
