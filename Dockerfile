@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER MAINTAINER David Manthey <david.manthey@kitware.com>
 
 
@@ -49,6 +49,9 @@ RUN apt-get update && \
     libsqlite3-dev \
 
     libjpeg-turbo8-dev \
+
+    # needed for supporting CUDA
+    libcupti-dev \
 
     # useful later
     libmemcached-dev && \
