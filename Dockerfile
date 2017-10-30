@@ -3,7 +3,7 @@ MAINTAINER MAINTAINER David Manthey <david.manthey@kitware.com>
 
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade && \
+    DEBIAN_FRONTEND=noninteractive apt-get --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade && \
     apt-get install -y --no-install-recommends \
     git \
     wget \
@@ -53,6 +53,9 @@ RUN apt-get update && \
     # needed for supporting CUDA
     libcupti-dev \
 
+    # Needed for ITK and SlicerExecutionModel
+    # ninja-build \
+
     # useful later
     libmemcached-dev && \
 
@@ -77,9 +80,9 @@ RUN mkdir build_lib && \
 
     # Build libtiff so it will use our openjpeg
     cd /build_lib && \
-    wget http://download.osgeo.org/libtiff/tiff-4.0.6.tar.gz && \
-    tar -zxf tiff-4.0.6.tar.gz && \
-    cd tiff-4.0.6 && \
+    wget http://download.osgeo.org/libtiff/tiff-4.0.8.tar.gz && \
+    tar -zxf tiff-4.0.8.tar.gz && \
+    cd tiff-4.0.8 && \
     ./configure && \
     make && \
     make install && \
@@ -112,51 +115,61 @@ RUN mkdir -p $build_path && \
     chmod +x $build_path/miniconda/bin/python
 ENV PATH=$build_path/miniconda/bin:${PATH}
 
-
-#ITK dependencies
-
-RUN cd / && \
-    mkdir ninja && \
-    cd ninja && \
-    wget https://github.com/ninja-build/ninja/releases/download/v1.7.1/ninja-linux.zip && \
-    unzip ninja-linux.zip && \
-    ln -s $(pwd)/ninja /usr/bin/ninja
-
-
-#need to get the latest tag of master branch in ITK
-# v4.10.0 = 95291c32dc0162d688b242deea2b059dac58754a
-RUN cd / && \
-    git clone https://github.com/InsightSoftwareConsortium/ITK.git && \
-    cd ITK && \
-    git checkout $(git describe --abbrev=0 --tags) && \
-    #now get openslide
-    cd Modules/External && \
-    git clone https://github.com/InsightSoftwareConsortium/ITKIOOpenSlide.git && \
-    cd / && \
-    mkdir ITKbuild && \
-    cd ITKbuild && \
-    cmake \
-        -G Ninja \
-        -DITK_USE_SYSTEM_SWIG:BOOL=OFF \
-        -DBUILD_EXAMPLES:BOOL=OFF \
-        -DBUILD_TESTING:BOOL=OFF \
-        -DBUILD_SHARED_LIBS:BOOL=ON \
-        -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON \
-        -DITK_LEGACY_REMOVE:BOOL=ON \
-        -DITK_BUILD_DEFAULT_MODULES:BOOL=ON \
-        -DITK_USE_SYSTEM_LIBRARIES:BOOL=ON \
-        -DModule_ITKIOImageBase:BOOL=ON \
-        -DModule_ITKSmoothing:BOOL=ON \
-        -DModule_ITKTestKernel:BOOL=ON \
-        -DModule_IOOpenSlide:BOOL=ON \
-        -DCMAKE_INSTALL_PREFIX:PATH=/build/miniconda \
-        -DITK_WRAP_PYTHON=ON \
-        -DPYTHON_INCLUDE_DIR:FILEPATH=/build/miniconda/include/python2.7 \
-        -DPYTHON_LIBRARY:FILEPATH=/build/miniconda/lib/libpython2.7.so \
-        -DPYTHON_EXECUTABLE:FILEPATH=/build/miniconda/bin/python \
-        -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF ../ITK && \
-    ninja && \
-    ninja install && \
-    cd / && \
-    rm -rf ITK ITKbuild
+# Disable ITK build
+#
+# #need to get the latest tag of master branch in ITK
+# # v4.10.0 = 95291c32dc0162d688b242deea2b059dac58754a
+# RUN cd / && \
+#     git clone https://github.com/InsightSoftwareConsortium/ITK.git && \
+#     cd ITK && \
+#     git checkout $(git describe --abbrev=0 --tags) && \
+#     #now get openslide
+#     cd Modules/External && \
+#     git clone https://github.com/InsightSoftwareConsortium/ITKIOOpenSlide.git && \
+#     cd / && \
+#     mkdir ITKbuild && \
+#     cd ITKbuild && \
+#     cmake \
+#         -G Ninja \
+#         -DITK_USE_SYSTEM_SWIG:BOOL=OFF \
+#         -DBUILD_EXAMPLES:BOOL=OFF \
+#         -DBUILD_TESTING:BOOL=OFF \
+#         -DBUILD_SHARED_LIBS:BOOL=ON \
+#         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON \
+#         -DITK_LEGACY_REMOVE:BOOL=ON \
+#         -DITK_BUILD_DEFAULT_MODULES:BOOL=ON \
+#         -DITK_USE_SYSTEM_LIBRARIES:BOOL=ON \
+#         -DModule_ITKIOImageBase:BOOL=ON \
+#         -DModule_ITKSmoothing:BOOL=ON \
+#         -DModule_ITKTestKernel:BOOL=ON \
+#         -DModule_IOOpenSlide:BOOL=ON \
+#         -DCMAKE_INSTALL_PREFIX:PATH=/build/miniconda \
+#         -DITK_WRAP_PYTHON=ON \
+#         -DPYTHON_INCLUDE_DIR:FILEPATH=/build/miniconda/include/python2.7 \
+#         -DPYTHON_LIBRARY:FILEPATH=/build/miniconda/lib/libpython2.7.so \
+#         -DPYTHON_EXECUTABLE:FILEPATH=/build/miniconda/bin/python \
+#         -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF ../ITK && \
+#     ninja && \
+#     ninja install && \
+#     cd / && \
+#     rm -rf ITK ITKbuild
+#
+# # Support C++ CLIs.
+# # See https://github.com/KitwareMedical/ITKTubeTK/blob/master/Dockerfile-cuda-itk-vtk-sem-af
+# # Download/configure/build/install SlicerExecutionModel
+# ENV SEM_GIT_TAG master
+# ENV SEM_BUILD_DIR $BUILD_PATH/SEM-build
+# RUN cd $BUILD_PATH && \
+#     git clone --depth 1 -b ${SEM_GIT_TAG} https://github.com/Slicer/SlicerExecutionModel.git SEM && \
+#     mkdir SEM-build && cd SEM-build && \
+#     cmake \
+#         -G Ninja \
+#         -DCMAKE_BUILD_TYPE:STRING=Release \
+#         -DBUILD_SHARED_LIBS:BOOL=ON \
+#         -DBUILD_TESTING:BOOL=OFF \
+#         -DITK_DIR:PATH=$BUILD_PATH/ITK-build \
+#         ../SEM && \
+#     ninja && \
+#     find . -name '*.o' -delete && \
+#     find ../SEM* -depth -name .git -exec rm -rf '{}' \;
 
